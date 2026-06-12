@@ -6,11 +6,13 @@ been tampered with.
 
 ### Signing Convention v1
 
-The first format for a commit signature is a (JWT)[https://en.wikipedia.org/wiki/JSON_Web_Token], with the following field:
+The first format for a commit signature is a [JWT](https://en.wikipedia.org/wiki/JSON_Web_Token), with the following fields:
+
 | Key | Name | Description | Format | Example |
-| `iss` | `Issuer` | The entity signing the data | An Internet hostname | example.com |
-| `iat` | `Issued At` | The timestamp that the JWT was issued  | 1781298683 |
-| `cha` | `Commit Hash` | The commit hash that is being signed | 00e8bb1093b9f0f42eacd7ad4ce16122aa9b1d8b |
+| --- | --- | --- | --- | --- |
+| `iss` | Issuer | The entity signing the data | An Internet hostname | example.com |
+| `iat` | Issued At | The timestamp that the JWT was issued  | Number of seconds since the UNIX epoch | 1781298683 |
+| `cha` | Commit Hash | The commit hash that is being signed | A hexadecimal SHA hash, with a minium of 16 characters | 00e8bb1093b9f0f42 |
 
 Any signing relies on a private/public key pair and an authority. 
 
