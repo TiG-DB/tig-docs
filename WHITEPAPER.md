@@ -1,18 +1,18 @@
-# TIG
+# TiG
 
 ## Timeline In Git
 
 # Executive Summary
 
-TIG is an open standard in data storage that can be used to store timeline-based data. As it is intended to be able to store detailed historical data, potentially of a personal nature, it is designed to be both easy to isolate (secure, private) and yet accessible to inspection and transfer (verification, ownership).
+TiG is an open standard in data storage that can be used to store timeline-based data. As it is intended to be able to store detailed historical data, potentially of a personal nature, it is designed to be both easy to isolate (secure, private) and yet accessible to inspection and transfer (verification, ownership).
 
-I propose a structured file-based store using *Git* as both the storage medium and transport mechanism of data, with a defined schema for files and their contents.
+We propose a structured file-based store using *Git* as both the storage medium and transport mechanism of data, with a defined schema for files and their contents.
 
 This approach makes reasoning about and understanding the provenance of data simple, and will give confidence to users and other stakeholders.
 
 # Introduction
 
-Many user-centric views of the world require queries that need highly local, personal, historical data. For example, a person may ask “when did I last service my car?”, “who installed my boiler?” or “which vaccines did I have as a child?”. These three subjects (a car, a house and a person’s medical history) will inform this white paper, but I envisage many more.
+Many user-centric views of the world require queries that need highly local, personal, historical data. For example, a person may ask “when did I last service my car?”, “who installed my boiler?” or “which vaccines did I have as a child?”. These three subjects (a car, a house and a medical history) will inform this white paper, but we envisage many more.
 
 This data may need to change hands. For example, when a car or house is sold, or when a child becomes an adult and takes control of their health records.
 
@@ -46,7 +46,7 @@ With simple conventions on top of Git’s core functionality, data provenance ca
 
 # Technical Details
 
-The specification for TIG will comprise of:
+The specification for TiG will comprise of:
 
 * A specification for repository layout.  
 * A specification for the contents of each file type in the repository.  
@@ -169,18 +169,18 @@ There likely will be further functionality added to the specification, enabling:
 * Sharing subsets of history to a third party.  
 * Encrypting subsets of history.
 
-The author’s initial intent is to develop TIG as a library to power a UK-oriented car journaling app, as a proof that the concept is robust and scalable.
+The author’s initial intent is to develop TiG as a library to power a UK-oriented car journaling app, as a proof that the concept is robust and scalable.
 
-The open nature of the data will allow manufacturers to provide their own TIG-powered apps if they wish.
+The open nature of the data will allow manufacturers to provide their own TiG-powered apps if they wish.
 
 This white paper may later be obsoleted by an RFC or similar (more formal) standard.
 
 The specification should allow specialised LLMs to ingest the data and provide natural language queries.
 
-Ultimately the author hopes that TIG becomes trusted and understood well enough that its usage to store health data becomes a risk-free choice, enabling people to truly take control of their own information.
+Ultimately the author hopes that TiG becomes trusted and understood well enough that its usage to store health data becomes a risk-free choice, enabling people to truly take control of their own information.
 
 # Conclusion
 
-TIG is a novel and ambitious project that aims to revolutionise how we store, manage, and transfer personal data. By leveraging the familiar infrastructure of Git and adhering to open standards, TIG offers a robust, secure, and transparent solution for handling sensitive information. 
+TiG is a novel and ambitious project that aims to revolutionise how we store, manage, and transfer personal data. By leveraging the familiar infrastructure of Git and adhering to open standards, TiG offers a robust, secure, and transparent solution for handling sensitive information. 
 
-While there are challenges to overcome, the potential benefits of TIG are significant, particularly in empowering individuals to take control of their data and fostering trust in data exchange processes. With continued development and adoption, TIG could pave the way for a more user-centric and privacy-conscious approach to personal data management.
+While there are challenges to overcome, the potential benefits of TiG are significant, particularly in empowering individuals to take control of their data and fostering trust in data exchange processes. With continued development and adoption, TiG could pave the way for a more user-centric and privacy-conscious approach to personal data management.
