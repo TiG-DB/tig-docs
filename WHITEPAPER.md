@@ -111,7 +111,7 @@ The summaries directory is for placing non-replicated summary data which, for co
 
 Whenever entities in the repository change a git commit is performed. This implicitly timestamps the operation. The authenticity of this timestamp, and the identity of the committer can be strengthened with a simple cryptographic signature.
 
-The signature should be a line in the description field of the commit.
+The signature is a standard Git signed tag pointing at the commit, created by a signing authority (a notary). Because a commit's hash covers its history, one signature also covers every earlier commit. See COMMITS.md for the convention.
 
 # Benefits and Advantages
 
