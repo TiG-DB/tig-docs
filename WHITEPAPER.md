@@ -107,11 +107,19 @@ Application specific denormalized data will be stored in /summaries, which is li
 
 The summaries directory is for placing non-replicated summary data which, for convenience, is stored physically inside the repository file system directory. Example usage might be an SQLite database that has telemetry data points ingested into tables for aggregation purposes.
 
+### Metadata
+
+TiG's own metadata about the repository is stored in /.tig. Unlike /summaries it is committed and replicated, as it is needed to interpret and verify the repository. For example:
+
+* /.tig/allowed_signers: the public keys of the devices that sign commits (see COMMITS.md).
+
+Future versions of the specification may add further files here, such as the version of the TiG format the repository follows.
+
 ## Verification of Commits
 
 Whenever entities in the repository change a git commit is performed. This implicitly timestamps the operation. The authenticity of this timestamp, and the identity of the committer can be strengthened with a simple cryptographic signature.
 
-The signature is a standard Git signed tag pointing at the commit, created by a signing authority (a notary). Because a commit's hash covers its history, one signature also covers every earlier commit. See COMMITS.md for the convention.
+Each commit is signed by the device that made it, and a standard Git signed tag pointing at the commit, created by a signing authority (a notary), confirms when it existed. Because a commit's hash covers its history, one signature also covers every earlier commit. See COMMITS.md for the convention.
 
 # Benefits and Advantages
 
