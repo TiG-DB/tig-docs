@@ -4,8 +4,7 @@ Each commit to a TiG database should be covered by a cryptographic signature tha
 It isn't possible to confirm the absolute "truth" of any event, evidence or telemetry, but we can ensure that timelines haven't
 been tampered with.
 
-A signature is never stored inside the commit it signs, since the commit's hash would then have to include its own signature.
-Instead, signatures are Git's standard [signed tags](https://git-scm.com/docs/git-tag), pointing at the signed commit.
+Signatures use Git's standard [signed tags](https://git-scm.com/docs/git-tag), pointing at the signed commit.
 
 ### Signing Convention v1
 
