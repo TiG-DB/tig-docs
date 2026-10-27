@@ -160,20 +160,28 @@ Notary signatures prove only that a commit existed *no later than* the signature
 Signatures do not prove that a reading was *not backdated*, because nothing shows that a commit was made *after* a given time.
 See [Open questions](#open-questions).
 
-### Library API (indicative)
+### Library API
+
+`tig-lib` implements this draft (see `include/tig/tig.h`):
 
 ```c
 tig_status tig_clock_now(tig_repository* repository, int64_t* unix_ms);
 
-tig_status tig_telemetry_stream_define(tig_tx* tx, const char* stream,
-                                       const tig_stream_def* definition);
-tig_status tig_telemetry_append(tig_tx* tx, const char* stream, int64_t unix_ms,
-                                const char* const* values, size_t count);
+tig_status tig_telemetry_stream_define(tig_repository* repository, const char* stream,
+                                       const tig_stream_definition* definition);
+tig_status tig_telemetry_append(tig_repository* repository, const char* stream, int64_t unix_ms,
+                                const char* const* values, size_t value_count);
+
+tig_status tig_repository_commit(tig_repository* repository, const char* message);
 ```
 
-`tig_telemetry_append` applies the checks in [Writing](#writing) and owns chunk paths, sealing and the CSV format, so callers never handle
-telemetry files themselves. Appends are staged in a transaction (`tig_tx`) and written by its commit, so one commit can hold many readings,
-or a reading together with an event. A test clock can be supplied through `tig_options`.
+* `tig_telemetry_stream_define` writes `stream.yaml`, and succeeds without changing anything if the stream is already defined identically.
+* `tig_telemetry_append` applies the checks in [Writing](#writing) and owns chunk paths and the CSV format, so callers never handle
+  telemetry files themselves. Each reading is written to the working tree straight away, so it survives a crash before the next commit.
+* `tig_repository_commit` commits everything written since the last commit, after checking the [append-only rule](#append-only-rule).
+* A test clock can be supplied through `tig_options`.
+
+Not yet implemented: correcting the TiG clock by the notary offset, and signing commits with the device key.
 
 ### Open questions
 
