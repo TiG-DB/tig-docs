@@ -17,7 +17,7 @@ under `refs/tags/tig/sig/`.
 object 9fceb02d0ae598e95dc970b74767f19372d61af8
 type commit
 tag tig/sig/20261020T140000Z
-tagger TiG Notary <notary@example.com> 1781298683 +0000
+tagger TiG Notary <notary@example.com> 1792504800 +0000
 
 TiG-Signature: 1
 Issuer: example.com
@@ -31,7 +31,7 @@ Device: SHA256:uNiVztksCsDhcc0u9e8BujQXVUpKZIDTMczCvj3tD2s
 | --- | --- | --- | --- |
 | `object` | The commit being signed | The full hexadecimal commit hash | 9fceb02d0ae598e95dc970b74767f19372d61af8 |
 | `tag` | The tag name | `tig/sig/` followed by the signing time in UTC | tig/sig/20261020T140000Z |
-| `tagger` | The notary's name, email and signing time | Standard Git identity, with the time in seconds since the UNIX epoch, always `+0000` | TiG Notary <notary@example.com> 1781298683 +0000 |
+| `tagger` | The notary's name, email and signing time | Standard Git identity, with the time in seconds since the UNIX epoch, always `+0000` | TiG Notary <notary@example.com> 1792504800 +0000 |
 | `TiG-Signature` | The signing convention version | Integer | 1 |
 | `Issuer` | The organisation vouching for the signature, which publishes its keys | An Internet hostname, not necessarily the notary's own | example.com |
 | `Device` | The device key that requested the signature | The key's SHA-256 fingerprint, as printed by `ssh-keygen -l` | SHA256:uNiVztksCsDhcc0u9e8BujQXVUpKZIDTMczCvj3tD2s |
@@ -109,6 +109,10 @@ ssh-keygen -Y sign -n tig-notary -f device_key request.txt
 
 Unknown lines before the signature are signed too, and the notary ignores them.
 
+Clients should identify themselves with a `User-Agent` header ([RFC 9110](https://www.rfc-editor.org/rfc/rfc9110#name-user-agent)),
+e.g. `User-Agent: tig-agent/0.3.1`. It is optional, is not signed and is not part of the tag. Notaries may record it for statistics,
+but must not reject or treat requests differently because of it.
+
 ##### Checks
 
 The notary rejects the request unless:
@@ -146,7 +150,7 @@ Errors use HTTP status codes, with a one-line explanation in a `text/plain` body
 | `400 Bad Request` | The request doesn't parse, or the version is unsupported | Don't retry the same request |
 | `401 Unauthorized` | The signature doesn't verify against `Key` | Don't retry the same request |
 | `422 Unprocessable Content` | `Time` is more than 5 minutes from the notary's clock | Correct the clock using the response's `Date` header, then retry once |
-| `429 Too Many Requests` | Rate limited | Retry after `Retry-After` |
+| `429 Too Many Requests` | Rate limited. The response carries a `Retry-After` header | Retry after `Retry-After` |
 | `5xx` | Notary failure | Retry later, with backoff |
 
 The `422` response lets a device whose clock is far out still get signed. Without it, the device would need a signature in order to
