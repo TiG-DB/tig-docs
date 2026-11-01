@@ -53,6 +53,11 @@ Each client (e.g. `tig-agent`) generates its own Ed25519 key pair on first run a
   SHA256:uNiVztksCsDhcc0u9e8BujQXVUpKZIDTMczCvj3tD2s namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA...
   ```
 * Every commit is signed by the device key, using Git's standard SSH commit signing (`git commit -S` with `gpg.format=ssh`).
+* A repository created before its client signed commits has unsigned history without `.tig/allowed_signers`. The client then adds the
+  file in a commit signed by the key it lists, and signs every commit after it. That commit is the repository's *key commit*; in a
+  repository created with the file, it is the first commit. History before the key commit is legacy: a notary signature still proves
+  it existed by the tag time, but nothing proves which device wrote it.
+* Once added, `.tig/allowed_signers` must not change in a later commit.
 * A device key is pseudonymous: it identifies a device, not a person or organisation.
 
 #### Signing
@@ -180,8 +185,10 @@ When a key is rotated, the old key is kept with a `valid-before` date and never 
 1. Read the `Issuer` from the tag message and fetch `https://<issuer>/.well-known/tig-public-key`.
 2. Run `git -c gpg.ssh.allowedSignersFile=<file> verify-tag <tag>`.
 3. Confirm that the signing principal matches the `Issuer`, and that the tag's `object` is the commit being checked or one of its descendants.
-4. Run `git -c gpg.ssh.allowedSignersFile=.tig/allowed_signers verify-commit <commit>` for each commit, using the `allowed_signers`
-   file from the repository's first commit, and confirm that the tag's `Device` is one of its principals.
+4. Find the key commit: the earliest commit that adds `.tig/allowed_signers`. Run
+   `git -c gpg.ssh.allowedSignersFile=<file> verify-commit <commit>` for it and each later commit, using the file from the key commit,
+   and confirm that no later commit changes the file and that the tag's `Device` is one of its principals. Report any commits before
+   the key commit as unsigned legacy history.
 
 This needs nothing beyond standard Git and OpenSSH.
 
