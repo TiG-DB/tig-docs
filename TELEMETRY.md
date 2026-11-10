@@ -17,7 +17,7 @@ A value that is measured, even one that changes slowly, is telemetry. A change m
 | Battery replaced | Event | Done to the device |
 | Disk capacity | State | Changed only by an event, such as a disk being replaced |
 
-An agent may *detect* a change from telemetry (e.g. a different disk capacity) and then record the matching event.
+An agent may *detect* a change from telemetry (e.g. a different disk capacity) and then record the matching event (see `EVENTS.md`).
 
 ### Streams
 

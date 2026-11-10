@@ -47,18 +47,32 @@ Each client (e.g. `tig-agent`) generates its own Ed25519 key pair on first run a
 
 * The private key never leaves the device and is never stored in the repository.
 * The public key is committed to the repository in `.tig/allowed_signers` (allowed signers format), so that anyone holding the repository can verify its commits.
-  It is added in the repository's first commit, which is signed by that same key. The principal is the key's fingerprint, matching the `Device` line of signature tags:
+  The first key is added in the repository's first commit, which is signed by that same key. The principal is the key's fingerprint, matching the `Device` line of signature tags:
 
   ```
   SHA256:uNiVztksCsDhcc0u9e8BujQXVUpKZIDTMczCvj3tD2s namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA...
   ```
-* Every commit is signed by the device key, using Git's standard SSH commit signing (`git commit -S` with `gpg.format=ssh`).
+* Every commit is signed by a key listed in `.tig/allowed_signers`, using Git's standard SSH commit signing (`git commit -S` with
+  `gpg.format=ssh`).
 * A repository created before its client signed commits has unsigned history without `.tig/allowed_signers`. The client then adds the
   file in a commit signed by the key it lists, and signs every commit after it. That commit is the repository's *key commit*; in a
   repository created with the file, it is the first commit. History before the key commit is legacy: a notary signature still proves
   it existed by the tag time, but nothing proves which device wrote it.
-* Once added, `.tig/allowed_signers` must not change in a later commit.
 * A device key is pseudonymous: it identifies a device, not a person or organisation.
+
+#### Several signers
+
+A repository may have more than one writer, such as a vehicle owner's app and a garage's system, each with its own device key.
+
+* A key is added by appending its line to `.tig/allowed_signers`, in a commit signed by a key that is already listed. Each commit is
+  checked against the file as it was *before* that commit, so a key can never authorise itself.
+* Lines are only ever appended. A key is never removed or changed, so that the commits it signed can still be checked.
+* Whether more than one signer is acceptable depends on the entity. A computer's repository written by its own `tig-agent` should only
+  ever list that agent's key, so another key there means something other than the device wrote to it. A car's repository may
+  reasonably list the owner's app and several garages. Verifiers report every signer, and a vocabulary (see `EVENTS.md`) may require
+  a single one.
+* With several writers, histories can diverge. Writers combine them with merge commits, never by rebasing, since commits that are
+  already signed must not be rewritten.
 
 #### Signing
 
@@ -186,9 +200,10 @@ When a key is rotated, the old key is kept with a `valid-before` date and never 
 2. Run `git -c gpg.ssh.allowedSignersFile=<file> verify-tag <tag>`.
 3. Confirm that the signing principal matches the `Issuer`, and that the tag's `object` is the commit being checked or one of its descendants.
 4. Find the key commit: the earliest commit that adds `.tig/allowed_signers`. Run
-   `git -c gpg.ssh.allowedSignersFile=<file> verify-commit <commit>` for it and each later commit, using the file from the key commit,
-   and confirm that no later commit changes the file and that the tag's `Device` is one of its principals. Report any commits before
-   the key commit as unsigned legacy history.
+   `git -c gpg.ssh.allowedSignersFile=<file> verify-commit <commit>` for it using the file it adds, and for each later commit using the
+   file as it was in its parent (for a merge, it must verify against at least one parent's file). Confirm that each commit's file still
+   contains every line of its parents' files, and that the tag's `Device` is a principal in the file at the tagged commit. Report any
+   commits before the key commit as unsigned legacy history, and list the signers that signed the rest.
 
 This needs nothing beyond standard Git and OpenSSH.
 
@@ -198,7 +213,8 @@ This needs nothing beyond standard Git and OpenSSH.
 | --- | --- | --- |
 | The commit and its history existed no later than the tag time | The notary's tag signature | That the contents are true |
 | The notary is `Issuer` | The key published over HTTPS at `Issuer` | Anything once the domain changes hands: a later owner could publish new keys |
-| The commits were made by a particular device | The commit signatures, checked against `.tig/allowed_signers` | Who owns or uses the device |
+| The commits were made by a particular device | The commit signatures, checked against `.tig/allowed_signers` as it was before each commit | Who owns or uses the device |
+| Each signer was let in by an earlier one | The commit that added its key, signed by a key already listed | That the earlier signer should have trusted it |
 | That device asked for the notary signature | The `Device` line, which the notary only adds after checking the request signature | |
 
 Because the device's private key is not in the repository, a copy of the repository cannot be continued under the original device's key.

@@ -35,6 +35,7 @@ The first prototypes record the history of **computing devices**: desktops, serv
 - File naming and formats for each entity type (see `lola-test` for an early YAML event example).
 - Commit signing v1: signed tags (`COMMITS.md`).
 - Telemetry streams, chunks and verification (`TELEMETRY.md`, draft).
+- Events and state: event files, changes, replay and corrections (`EVENTS.md`, draft).
 - `tig-lib`: create, open and clone a repository; write and read entities; store and verify signature tags.
 
 ### 1. Desktop and server prototype
@@ -68,7 +69,7 @@ Housing, then pets, then health, each once the previous verticals have built tru
 
 - ~~**Who signs?**~~ Decided: agents send commit hashes to TiG Notary, which returns signed Git tags (see `COMMITS.md`).
 - ~~**Identity?**~~ Decided for now: devices generate their own pseudonymous keys, with no accounts. Stronger identities (verified owners, organisations such as garages) may be added later, where a use case needs them.
-- **Device key lifecycle.** What happens when a device is reimaged and loses its key, when a key is rotated (e.g. the old key signs a commit adding the new one), and when the device is sold.
+- **Device key lifecycle.** What happens when a device is reimaged and loses its key, when a key is rotated (e.g. the old key signs a commit adding the new one, see `COMMITS.md`, "Several signers"), and when the device is sold. Signers can be added but never removed, so a lost, compromised or no longer trusted key (e.g. a garage the owner stops using) needs a way to be revoked.
 - **Notary abuse.** With no accounts, anyone can generate a key and request signatures. Rate limiting per key and per IP address is probably enough for the prototype.
 - **Hosted storage needs a business plan.** Hosting repositories, especially evidence files and long telemetry histories, could be expensive and complicated to run. Before offering hosted storage we need a business plan covering costs, who pays (owners, manufacturers, a premium tier), retention, and what happens to data if the service shuts down. Until then, TiG Notary signs hashes only, and owners bring their own remote.
 - ~~**State or telemetry?**~~ Decided: telemetry is observed, events are done to the entity, so battery capacity is telemetry and replacing the battery is an event (see `TELEMETRY.md`).
