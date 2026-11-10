@@ -281,17 +281,17 @@ A verifier can check:
 
 The rules above are the same for every kind of entity. A vocabulary adds the meaning for one domain: entity attributes, item kinds and
 their attributes and units, event and action types and their extra fields, and the stream names used in `readings`. It may also require
-a single signer, as a device vocabulary would for repositories written only by the device's own agent. Vocabularies will be specified
-separately; this is a sketch of what each might cover.
+a single signer, e.g. for repositories written only by a device's own agent. Vocabularies are specified separately, starting with
+`vocabularies/DEVICE.md`; for the others, this is a sketch of what each might cover.
 
 |  | Device | Vehicle (GTdb) | Residence | Person |
 | --- | --- | --- | --- | --- |
-| Entity attributes | Model | VIN, make, model, build date | Construction date, type | Date of birth, gender |
-| Item kinds | `disk`, `filesystem`, `memory`, `os`, `package` | `tyre`, `fluid`, `filter`, `battery`, `certificate` | `room`, `boiler`, `appliance`, `window`, `certificate` | `condition`, `allergy`, `medication`, `immunisation`, `implant` |
-| Event types | | `service`, `mot`, `purchase` | `visit`, `survey` | `appointment`, `admission` |
-| Action types | `discovered`, `installed`, `removed`, `resized`, `upgraded`, `booted` | `acquired`, `fitted`, `replaced`, `repaired`, `inspected` | `built`, `installed`, `replaced`, `repaired`, `inspected` | `recorded`, `diagnosed`, `resolved`, `prescribed`, `stopped`, `immunised`, `operated` |
-| Readings | | `odometer` | Meter readings | Weight, blood pressure |
-| External schemes | | Part numbers | | SNOMED CT, dm+d |
+| Entity attributes | Vendor, model, serial | VIN, make, model, build date | Construction date, type | Date of birth, gender |
+| Item kinds | `firmware`, `cpu`, `memory`, `disk`, `filesystem`, `network`, `os`, `battery` | `tyre`, `fluid`, `filter`, `battery`, `certificate` | `room`, `boiler`, `appliance`, `window`, `certificate` | `condition`, `allergy`, `medication`, `immunisation`, `implant` |
+| Event types | `discovery`, `boot` | `service`, `mot`, `purchase` | `visit`, `survey` | `appointment`, `admission` |
+| Action types | `discovered`, `booted`, `installed`, `removed`, `replaced`, `resized`, `upgraded`, `reconfigured` | `acquired`, `fitted`, `replaced`, `repaired`, `inspected` | `built`, `installed`, `replaced`, `repaired`, `inspected` | `recorded`, `diagnosed`, `resolved`, `prescribed`, `stopped`, `immunised`, `operated` |
+| Readings | Load, memory and filesystem use | `odometer` | Meter readings | Weight, blood pressure |
+| External schemes | PCI IDs | Part numbers | | SNOMED CT, dm+d |
 
 #### Examples
 
@@ -337,24 +337,20 @@ actions:
         set: { name: Penicillin }
 ```
 
-A device: a disk swap found at boot, recorded by its agent.
+A device: a disk swap found at boot, recorded by its agent. It happened at some point while the device was off, so it is a separate event
+from the boot, whose time is exact (see `vocabularies/DEVICE.md`).
 
 ```yaml
 # events/2026/2026-11-04.q9w3ne.yaml
 time: "2026-11-04T07:12:31Z"
 not_before: "2026-11-03T22:41:00Z"
-source: tig-agent 0.5.0
+source: tig-agent 0.6.0
 actions:
   - type: replaced
     changes:
-      - remove: disk/3f9a1c
-      - add: disk/b71e05
-        set: { model: Example NVMe 2TB, capacity: 2000398934016 }
-  - type: booted
-    boot: 8c2e4f1a-6b0d-4c55-9e3a-2f1d7c9b0a64
-    changes:
-      - update: os
-        set: { kernel: 6.8.0-48-generic }
+      - remove: disk/7a858f1b
+      - add: disk/eb3f1f45
+        set: { model: Example NVMe 2TB, serial: "S7EXAMPLE002", capacity: 2000398934016, transport: nvme, rotational: false }
 ```
 
 ### Library API
