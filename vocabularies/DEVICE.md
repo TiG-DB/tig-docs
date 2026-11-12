@@ -18,9 +18,13 @@ A device's repository goes with the device when it is sold or handed on, so it i
 | Hardware identity: model and serial numbers, MAC addresses | IP addresses, network names (e.g. Wi-Fi SSIDs), VPN configuration |
 | Components: firmware, CPUs, memory, disks, network adapters, batteries | Hostname, which the owner chooses and the next owner will change |
 | Filesystems on internal disks, the operating system and kernel | User accounts, home directories, files |
-| Boots | Network shares, removable media, containers and what runs on the device |
+| Boots | Network shares, removable media, other software |
+| Docker Compose stacks and their containers, if the owner turns this on ([Compose stacks](#compose-stacks)) | A container's environment, ports, volumes, networks and secrets |
 
 Hardware identity is the device's equivalent of a car's VIN. Repositories are not generally public, but they may be shown to a buyer.
+
+Compose stacks are the one thing here that describes what the device is *used for*. They are recorded because a server's history is largely
+its services' history, but only when the owner enables it, and only what identifies a service and its image, never how it is configured.
 
 ### Entity and initial state
 
@@ -62,6 +66,8 @@ Attributes whose value is unknown or a placeholder (e.g. `To Be Filled By O.E.M.
 | `network` | `network/<hash>` | `mac`, `medium`, `driver`, `hardware` |
 | `os` | `os` | `id`, `version`, `name`, `kernel` |
 | `battery` | `battery/<hash>` or `battery/<name>` | `manufacturer`, `model`, `serial`, `technology`, `design-energy`, `design-charge` |
+| `stack` | `stack/<project>` | `project` |
+| `container` | `container/<project>/<service>/<n>` | `image`, `digest`, `created` |
 
 Sizes and capacities are in bytes, `design-energy` is in watt-hours and `design-charge` in amp-hours. Dates are `YYYY-MM-DD`. An attribute
 the device doesn't report is left out.
@@ -131,13 +137,37 @@ so it changes only at a boot (see [Boot](#boot)).
 Batteries that power the device. `design-energy` or `design-charge`, whichever the battery reports, is its capacity when new. Its
 current capacity is telemetry (see `TELEMETRY.md`, "Telemetry or state?").
 
+#### Compose stacks
+
+Optional: an agent records these only when the owner has enabled it and given the agent access to the Docker Engine API (read-only).
+
+A **stack** is a Docker Compose project, and a **container** is one replica of one of its services. Both are identified by the labels
+Compose puts on every container it creates (`com.docker.compose.project`, `.service` and `.container-number`), so containers started any
+other way (`docker run`, Swarm, Kubernetes) are not recorded.
+
+* A stack's ID is `stack/<project>` and a container's is `container/<project>/<service>/<n>`, where `<n>` is the replica number. Each part
+  is lowercased and any character an item ID doesn't allow is replaced by `-`. The ID names a *role*, as for `filesystem`: a container
+  recreated for the same service and replica is the same item.
+* `project` is the Compose project name as Compose reports it.
+* `image` is the image reference the service is configured with, without a registry credential (e.g. `postgres:16`). `digest` is the
+  content ID of the image the container was created from (`sha256:...`), which is what changes when a mutable tag such as `latest` is
+  pulled again. `created` is when the container was created, to the second.
+* A stack exists while any of its containers does. A container exists while Docker has it, running or not: a container that has stopped
+  or crashed is still the item, and its state is telemetry. Stopped containers are therefore not `removed`, but `docker compose down` is.
+* Recreating a container with a new `digest` or `image` is `upgraded`, which sets its new `created` too. Recreating it with the same image (e.g. changed configuration) is
+  `reconfigured`, with `created` the only attribute to change.
+* Containers started by `docker compose run` carry a `com.docker.compose.oneoff` label and are not recorded: they are tasks, not part of
+  the stack.
+* Not recorded: environment variables, command lines, ports, published addresses, volumes and bind mounts, networks, labels other than the
+  three above, and the Compose file itself. These identify the owner's configuration and may contain secrets.
+
 ### Events
 
 | Event type | Recorded | Actions |
 | --- | --- | --- |
 | `discovery` | When the agent first runs, and when a new agent version first records a kind of item | `discovered` |
 | `boot` | Once per boot | `booted` |
-| *(none)* | When the agent finds that a component or the operating system has changed | `installed`, `removed`, `replaced`, `resized`, `upgraded`, `reconfigured` |
+| *(none)* | When the agent finds that a component, the operating system, a stack or a container has changed | `installed`, `removed`, `replaced`, `resized`, `upgraded`, `reconfigured` |
 
 | Action type | Means | Changes |
 | --- | --- | --- |
@@ -198,6 +228,19 @@ since boot is given by boot events.
 | `filesystem.<mount>` | `used`, `available` | Bytes |
 
 `<mount>` is the filesystem's ID after `filesystem/`, with `/` replaced by `.`, e.g. `filesystem.root` or `filesystem.boot.efi`.
+
+For [Compose stacks](#compose-stacks), one stream per container, sampled at the same rate as the rest:
+
+| Stream | Columns | Unit |
+| --- | --- | --- |
+| `container.<project>.<service>.<n>` | `state`, `health`, `restarts`, `cpu`, `memory` | See below |
+
+`<project>.<service>.<n>` is the container's ID after `container/`, with `/` replaced by `.`. `state` is the container's status as Docker
+reports it (`running`, `restarting`, `exited`, `paused`, `dead`, `created`) and `health` is the result of its health check (`healthy`,
+`unhealthy`, `starting`), empty if it has none. `restarts` is Docker's restart count for the container, which resets when it is recreated.
+`cpu` is the CPU time used since the previous reading, in cores (1.0 is one core fully busy), and `memory` is the bytes in use, excluding
+the page cache. `cpu` and `memory` are empty when the container isn't running. A container's stream is only defined once the container has
+been seen, and a stream for a container that no longer exists simply stops.
 
 ### Example
 
@@ -296,9 +339,16 @@ runs unprivileged, as `tig-agent` does, reads once with privileges when it is in
 | `os` | `ID`, `VERSION_ID` and `PRETTY_NAME` in `/etc/os-release`; `uname()` release |
 | `battery` | `/sys/class/power_supply/<name>` where `type` is `Battery`: `manufacturer`, `model_name`, `serial_number`, `technology`, `energy_full_design` (µWh) or `charge_full_design` (µAh) |
 | Boot `time`, `boot` | `btime` in `/proc/stat`; `/proc/sys/kernel/random/boot_id` |
+| `stack`, `container` | Docker Engine API `GET /containers/json?all=1`, keeping containers with a `com.docker.compose.project` label: `Labels`, `Image`, `ImageID`, `Created`, `State` |
+| Container telemetry | `GET /containers/<id>/json` (`State.Health.Status`, `RestartCount`) and `GET /containers/<id>/stats?stream=false&one-shot=true` (`cpu_stats`, `precpu_stats`, `memory_stats`) |
 
 ### Open questions
 
+* **Container crashes and restarts.** `restarts` and `state` in telemetry show that a container restarted, but not why (exit code, OOM kill).
+  Is a crash something *done to* the device, and so an event, or an observation?
+* **Compose privacy.** Service and image names reveal what a server is used for. Is opt-in enough, or should a repository be able to say
+  that its stack data is stripped when the device is transferred?
+* **Other container runtimes.** Podman, and containers not started by Compose, are not recorded.
 * **Other writers.** Version 1 assumes the device's agent is its only writer, as `tig-agent` does. An owner adding a repair, with the
   shop's invoice as evidence, would be valuable. Should the vocabulary allow it, and which events may other signers record?
 * **Packages.** Installed software is done to the device, but a Linux system has thousands of packages that update almost daily. If
