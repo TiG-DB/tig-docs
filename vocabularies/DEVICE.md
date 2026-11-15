@@ -152,6 +152,10 @@ other way (`docker run`, Swarm, Kubernetes) are not recorded.
 * `image` is the image reference the service is configured with, without a registry credential (e.g. `postgres:16`). `digest` is the
   content ID of the image the container was created from (`sha256:...`), which is what changes when a mutable tag such as `latest` is
   pulled again. `created` is when the container was created, to the second.
+* `version` is optional: the release the image's tag stands for, such as `19.5.5-ce.0` for `gitlab/gitlab-ce:latest`, when an agent is able
+  to find it (the owner may allow it to ask Docker Hub for the tags that share the image's digest). It is absent when it can't be found, and an
+  agent that can't look it up at some moment doesn't remove one already recorded for the same image. A new `digest` or `image` with a new
+  `version` is one `upgraded`. Labels inside the image are not a source, since they are inherited from its base image.
 * A stack exists while any of its containers does. A container exists while Docker has it, running or not: a container that has stopped
   or crashed is still the item, and its state is telemetry. Stopped containers are therefore not `removed`, but `docker compose down` is.
 * Recreating a container with a new `digest` or `image` is `upgraded`, which sets its new `created` too. Recreating it with the same image (e.g. changed configuration) is
