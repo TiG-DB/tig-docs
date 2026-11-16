@@ -101,6 +101,14 @@ Entities will be stored in the following folders
 /evidence  
 /state
 
+### Orientation files
+
+Every repository carries `README.md` and `AGENTS.md` in its root. `README.md` tells a human what TiG is and what each folder holds. `AGENTS.md` gives AI agents and scripts the working rules: add events rather than rewrite, never rewrite history, telemetry is append-only, leave evidence and `.tig/allowed_signers` alone, never store secrets.
+
+These are written, and committed in the first commit, by `libtig` when it creates the repository. Their text is compiled into the library, so creating a repository never needs the network or a template repository to be fetched. Both files are generic: they name no entity. Owners may extend them, and the library never overwrites an existing copy.
+
+A canonical copy of the generic text may be published for reference, but it is not how the files are distributed.
+
 ### Summaries
 
 Application specific denormalized data will be stored in /summaries, which is listed in the .gitignore file, and not replicated to servers etc.
