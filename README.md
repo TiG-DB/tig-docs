@@ -3,7 +3,7 @@ Timeline in Git
 
 ## What is this?
 
-This is the documentation repository for the general TiG project.
+This is the documentation repository for the TiG project.
 
 ## What is TiG?
 
