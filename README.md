@@ -9,7 +9,7 @@ This is the documentation repository for the general TiG project.
 
 In short, it is a specification for long-term data storage, with provenance.
 
-For a detailed explanation of the rationale and aspirations see (WHITE PAPER.md)
+For a detailed explanation of the rationale and aspirations see ([WHITEPAPER.md])
 
 ## Who is this for?
 
