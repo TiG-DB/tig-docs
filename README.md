@@ -3,13 +3,13 @@ Timeline in Git
 
 ## What is this?
 
-This is the documentation repository for the general TiG project.
+This is the documentation repository for the TiG project.
 
 ## What is TiG?
 
 In short, it is a specification for long-term data storage, with provenance.
 
-For a detailed explanation of the rationale and aspirations see (WHITE PAPER.md)
+For a detailed explanation of the rationale and aspirations see [the white paper](WHITEPAPER.md).
 
 ## Who is this for?
 
