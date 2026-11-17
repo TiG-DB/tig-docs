@@ -32,7 +32,7 @@ The first prototypes record the history of **computing devices**: desktops, serv
 ### 0. Spec foundations
 
 - Repository layout, as described in the whitepaper (`/state`, `/events`, `/telemetry`, `/evidence`, git-ignored `/summaries`).
-- File naming and formats for each entity type (see `lola-test` for an early YAML event example).
+- File naming and formats for each entity type.
 - Commit signing v1: signed tags (`COMMITS.md`).
 - Telemetry streams, chunks and verification (`TELEMETRY.md`, draft).
 - Events and state: event files, changes, replay and corrections (`EVENTS.md`, draft).
