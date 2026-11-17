@@ -1,6 +1,6 @@
 # Roadmap
 
-This roadmap covers the TiG standard and its reference implementation (`tig-lib`). Product roadmaps that use TiG, such as GTdb in DriversClub, are tracked separately.
+This roadmap covers the TiG standard and its reference implementation (`tig-lib`). Product roadmaps that use TiG are tracked separately.
 
 ## Why prototype with devices?
 
@@ -57,9 +57,9 @@ The first prototypes record the history of **computing devices**: desktops, serv
 - Sharing a subset of history with a third party (e.g. a repair shop sees only hardware events).
 - Encrypting a subset of history.
 
-### 4. First production vertical: automotive (GTdb)
+### 4. First production vertical: automotive
 
-- Apply the proven layout and library to vehicles, branded as GTdb, starting with DriversClub.
+- Apply the proven layout and library to vehicles.
 
 ### Future verticals
 

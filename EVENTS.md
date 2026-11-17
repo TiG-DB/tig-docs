@@ -61,7 +61,7 @@ event and needs no time of its own: a car's VIN and build date, a house's constr
 ```yaml
 # state/initial.yaml
 kind: vehicle
-vocabulary: gtdb/1
+vocabulary: vehicle/1
 items:
   entity:
     vin: "SAJAA0000000X0000"
@@ -73,7 +73,7 @@ items:
 | Field | Description | Format |
 | --- | --- | --- |
 | `kind` | What the entity is | `vehicle`, `residence`, `person`, `device`, ... |
-| `vocabulary` | The vocabulary its events use (optional) | Name and version, e.g. `gtdb/1` |
+| `vocabulary` | The vocabulary its events use (optional) | Name and version, e.g. `vehicle/1` |
 | `items` | The items, keyed by ID (optional) | Map of item ID to attributes |
 
 * The file may be corrected like an event (see [Corrections](#corrections)). A repository without one starts from empty state.
@@ -284,7 +284,7 @@ their attributes and units, event and action types and their extra fields, and t
 a single signer, e.g. for repositories written only by a device's own agent. Vocabularies are specified separately, starting with
 `vocabularies/DEVICE.md`; for the others, this is a sketch of what each might cover.
 
-|  | Device | Vehicle (GTdb) | Residence | Person |
+|  | Device | Vehicle | Residence | Person |
 | --- | --- | --- | --- | --- |
 | Entity attributes | Vendor, model, serial | VIN, make, model, build date | Construction date, type | Date of birth, gender |
 | Item kinds | `firmware`, `cpu`, `memory`, `disk`, `filesystem`, `network`, `os`, `battery` | `tyre`, `fluid`, `filter`, `battery`, `certificate` | `room`, `boiler`, `appliance`, `window`, `certificate` | `condition`, `allergy`, `medication`, `immunisation`, `implant` |

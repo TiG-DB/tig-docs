@@ -189,6 +189,6 @@ Not yet implemented: correcting the TiG clock by the notary offset, and signing 
   would show the commit was made after that time and give readings a lower bound.
 * **Importing and buffered data.** The separate API mentioned in [Writing](#writing), and how verifiers treat what it writes.
 * **Several values per sample.** When should related values, such as per-core CPU temperatures, be columns of one stream rather than separate streams?
-* **Well-known stream names.** Whether each vertical needs a registry of names (e.g. `odometer` for GTdb), so that tools agree on them.
+* **Well-known stream names.** Whether each vertical needs a registry of names (e.g. `odometer` for vehicles), so that tools agree on them.
 * **Recording clock offset.** Whether the TiG clock's offset should itself be recorded as a stream, so verifiers can see how far a device's clock drifted.
 * **Allowed skew.** The value of the small skew allowed for readings and signatures.
