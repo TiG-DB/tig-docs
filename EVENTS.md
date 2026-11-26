@@ -281,13 +281,13 @@ A verifier can check:
 
 The rules above are the same for every kind of entity. A vocabulary adds the meaning for one domain: entity attributes, item kinds and
 their attributes and units, event and action types and their extra fields, and the stream names used in `readings`. It may also require
-a single signer, e.g. for repositories written only by a device's own agent. Vocabularies are specified separately, starting with
-`vocabularies/DEVICE.md`; for the others, this is a sketch of what each might cover.
+the signers, e.g. to a device's own keys and custodians for repositories written only by that device. Vocabularies are specified
+separately, starting with `vocabularies/DEVICE.md`; for the others, this is a sketch of what each might cover.
 
 |  | Device | Vehicle | Residence | Person |
 | --- | --- | --- | --- | --- |
 | Entity attributes | Vendor, model, serial | VIN, make, model, build date | Construction date, type | Date of birth, gender |
-| Item kinds | `firmware`, `cpu`, `memory`, `disk`, `filesystem`, `network`, `os`, `battery` | `tyre`, `fluid`, `filter`, `battery`, `certificate` | `room`, `boiler`, `appliance`, `window`, `certificate` | `condition`, `allergy`, `medication`, `immunisation`, `implant` |
+| Item kinds | `firmware`, `cpu`, `memory`, `disk`, `filesystem`, `gpu`, `driver`, `network`, `os`, `battery` | `tyre`, `fluid`, `filter`, `battery`, `certificate` | `room`, `boiler`, `appliance`, `window`, `certificate` | `condition`, `allergy`, `medication`, `immunisation`, `implant` |
 | Event types | `discovery`, `boot` | `service`, `mot`, `purchase` | `visit`, `survey` | `appointment`, `admission` |
 | Action types | `discovered`, `booted`, `installed`, `removed`, `replaced`, `resized`, `upgraded`, `reconfigured` | `acquired`, `fitted`, `replaced`, `repaired`, `inspected` | `built`, `installed`, `replaced`, `repaired`, `inspected` | `recorded`, `diagnosed`, `resolved`, `prescribed`, `stopped`, `immunised`, `operated` |
 | Readings | Load, memory and filesystem use | `odometer` | Meter readings | Weight, blood pressure |

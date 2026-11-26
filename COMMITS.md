@@ -67,12 +67,42 @@ A repository may have more than one writer, such as a vehicle owner's app and a 
 * A key is added by appending its line to `.tig/allowed_signers`, in a commit signed by a key that is already listed. Each commit is
   checked against the file as it was *before* that commit, so a key can never authorise itself.
 * Lines are only ever appended. A key is never removed or changed, so that the commits it signed can still be checked.
-* Whether more than one signer is acceptable depends on the entity. A computer's repository written by its own `tig-agent` should only
-  ever list that agent's key, so another key there means something other than the device wrote to it. A car's repository may
-  reasonably list the owner's app and several garages. Verifiers report every signer, and a vocabulary (see `EVENTS.md`) may require
-  a single one.
+* Whether more than one signer is acceptable depends on the entity. A computer's repository written by its own agent should only
+  ever list the device's own keys (one after another, see [Custodians](#custodians)) and a custodian, so another key there means
+  something other than the device wrote to it. A car's repository may reasonably list the owner's app and several garages. Verifiers
+  report every signer, and a vocabulary (see `EVENTS.md`) may restrict who they may be.
 * With several writers, histories can diverge. Writers combine them with merge commits, never by rebasing, since commits that are
   already signed must not be rewritten.
+
+#### Custodians
+
+A device that is reset loses its key, and a lost key can't sign the commit that adds its replacement. A repository can provide for
+this by listing a *custodian*: a key held by a service, such as a TiG host, that may add device keys on the owner's behalf. The service
+decides, by means outside the repository (e.g. the owner signing in to an account), that a new key belongs to the owner's device.
+Without a custodian, a device that loses its key can't continue the repository, so it starts a new one.
+
+* A custodian is listed with a principal made of `custodian:` and its key's fingerprint, rather than the fingerprint alone, so that a
+  verifier can tell the two apart. The `Device` line of a signature tag is always a device key, never a custodian.
+
+  ```
+  custodian:SHA256:Q3qa9J0X1t3m5mXk4n2cGqQ0w7GgY7L0b0dD8z5FhYI namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA...
+  ```
+* A custodian is added like any other key: by appending its line, in a commit signed by a listed key that is not itself a custodian.
+  That is usually the repository's first commit, or a later one when the owner starts to use the service. An owner who already has
+  a repository can add a custodian at any time, with a commit signed by their device key.
+* A custodian can do one thing. A commit it signs is valid only if it has a single parent and changes nothing but
+  `.tig/allowed_signers`, by appending lines for keys that are not custodians. It can't write events, state, telemetry or evidence, add
+  another custodian, or change or remove a line. Verifiers check this from the commit's difference from its parent.
+* Lines are never removed, so a custodian stays listed after the owner stops using its service. The restriction bounds what it can
+  do, but an added key can write new events, so an owner is trusting a custodian not to add keys they didn't ask for. It can't change
+  history that a notary signature already covers (see [What a signature proves](#what-a-signature-proves)). Revoking a custodian or
+  any other key is not yet specified (see `ROADMAP.md`, "Device key lifecycle").
+* Verifiers report the keys a custodian added separately from those added by a device or an owner, because that is where the owner
+  relied on the service.
+
+A typical re-enrolment: the reset device makes a new key, the owner signs in to the service, a commit signed by the service's custodian
+appends the new key, and the device fetches that commit and carries on, signing with the new key. How the device and the service talk to
+each other is not part of this document.
 
 #### Signing
 
@@ -204,6 +234,8 @@ When a key is rotated, the old key is kept with a `valid-before` date and never 
    file as it was in its parent (for a merge, it must verify against at least one parent's file). Confirm that each commit's file still
    contains every line of its parents' files, and that the tag's `Device` is a principal in the file at the tagged commit. Report any
    commits before the key commit as unsigned legacy history, and list the signers that signed the rest.
+5. For each commit signed by a custodian, confirm that it meets the restrictions in [Custodians](#custodians), and report the keys it
+   added.
 
 This needs nothing beyond standard Git and OpenSSH.
 
@@ -215,6 +247,7 @@ This needs nothing beyond standard Git and OpenSSH.
 | The notary is `Issuer` | The key published over HTTPS at `Issuer` | Anything once the domain changes hands: a later owner could publish new keys |
 | The commits were made by a particular device | The commit signatures, checked against `.tig/allowed_signers` as it was before each commit | Who owns or uses the device |
 | Each signer was let in by an earlier one | The commit that added its key, signed by a key already listed | That the earlier signer should have trusted it |
+| A key was added by a custodian | The custodian's commit signature, and that the commit only appends keys that aren't custodians | That the custodian checked who asked, or that it should have |
 | That device asked for the notary signature | The `Device` line, which the notary only adds after checking the request signature | |
 
 Because the device's private key is not in the repository, a copy of the repository cannot be continued under the original device's key.
