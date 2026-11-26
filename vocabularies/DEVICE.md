@@ -96,7 +96,7 @@ component moved between devices (see `EVENTS.md`, "Items moving between entities
 | `disk` | `<model>\n<serial>`, trimmed | The WWN; then `path:<bus path>`, e.g. `path:pci-0000:00:04.0` |
 | `network` | The permanent MAC address, lowercase, colon-separated | Not recorded (see below) |
 | `battery` | `<manufacturer>\n<model>\n<serial>`, trimmed | The role, e.g. `battery/bat0` |
-| `gpu` | `<vendor ID>:<device ID>:<subsystem ID>\n<bus location>`, in lowercase hexadecimal | The model name, for an adapter that is part of the processor and has no bus location |
+| `gpu` | `<vendor ID>:<device ID>:<subsystem ID>\n<bus location>` (see [Graphics adapters](#graphics-adapters)) | The model name, for an adapter that is part of the processor and has no bus location |
 
 A component without its own identity is told apart only by where it is. Moving it, or replacing it with an identical one, can't be
 detected, or looks like a replacement.
@@ -170,6 +170,20 @@ scheme, as for network adapters, e.g. `{ system: pci, value: "10de:2786" }`, and
 Most adapters have no serial number that can be read without the maker's tools, so one replaced by an identical card in the same slot
 isn't detected, as for CPUs. Software renderers, such as Microsoft's basic render driver or Mesa's `llvmpipe`, aren't adapters and aren't
 recorded.
+
+The identity of an adapter with a PCI bus location is `<vendor ID>:<device ID>:<subsystem ID>\n<bus location>`. Its ID is a hash of that
+text, so every agent writes it the same way: in lowercase hexadecimal, each number padded with zeroes to its full width.
+
+| Part | Format | Value |
+| --- | --- | --- |
+| `<vendor ID>`, `<device ID>` | 4 digits each | As in `hardware` |
+| `<subsystem ID>` | 8 digits | The subsystem ID followed by the subsystem vendor ID, which is the 32-bit value at offset `0x2c` of the adapter's configuration space. Zeroes where it has none. |
+| `<bus location>` | `ssss:bb:dd.f` | The segment (4 digits), bus (2), device (2) and function (1), e.g. `0000:01:00.0` |
+
+For example, an adapter `10de:2786` with subsystem ID `889d` and subsystem vendor ID `1043`, at bus 1, device 0, function 0 of segment 0,
+has the identity `10de:2786:889d1043\n0000:01:00.0`, and so the ID `gpu/166f5f15`.
+
+An adapter with no bus location is identified by its `model`, exactly as recorded.
 
 #### Graphics drivers
 
@@ -457,7 +471,7 @@ runs unprivileged, as `tig-agent` does, reads once with privileges when it is in
 | `network` | Interfaces in `/sys/class/net` that have a `device`; permanent MAC from `ETHTOOL_GPERMADDR`, or `address` where `addr_assign_type` is `0`; `wireless` or `phy80211` for Wi-Fi; `device/vendor` and `device/device`; `device/driver` |
 | `os` | `ID`, `VERSION_ID` and `PRETTY_NAME` in `/etc/os-release`; `uname()` release |
 | `battery` | `/sys/class/power_supply/<name>` where `type` is `Battery`: `manufacturer`, `model_name`, `serial_number`, `technology`, `energy_full_design` (µWh) or `charge_full_design` (µAh) |
-| `gpu`, `driver` | `/sys/class/drm/card*/device`: `vendor`, `device`, `subsystem_vendor`, `subsystem_device` and the `driver` link; the driver's version from `/sys/module/<driver>/version` where it has one (NVIDIA's is in `/proc/driver/nvidia/version`) |
+| `gpu`, `driver` | `/sys/class/drm/card*/device`: `vendor`, `device`, `subsystem_vendor`, `subsystem_device` and the `driver` link; the bus location is the name of the directory that `device` links to; the driver's version from `/sys/module/<driver>/version` where it has one (NVIDIA's is in `/proc/driver/nvidia/version`) |
 | Boot `time`, `boot` | `btime` in `/proc/stat`; `/proc/sys/kernel/random/boot_id` |
 | `cpu.busy` | `/proc/stat`, as a difference between readings |
 | `battery.<id>` | `/sys/class/power_supply/<name>`: `energy_now` and `energy_full` (µWh) or `charge_now` and `charge_full` (µAh), and `status` |
@@ -482,7 +496,7 @@ standard service account is an open question.
 | `network` | `GetAdaptersAddresses` (hardware interfaces of type Ethernet or Wi-Fi); the permanent address from the adapter (`OID_802_3_PERMANENT_ADDRESS`, `OID_802_11_PERMANENT_ADDRESS`) |
 | `os` | `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion`: `DisplayVersion` for `version`; `ProductName` for `name`, corrected from the build number because it still says Windows 10 on Windows 11; and `10.0.<CurrentBuild>.<UBR>` for `kernel` |
 | `battery` | `IOCTL_BATTERY_QUERY_INFORMATION` (manufacturer, name, serial, designed capacity) |
-| `gpu`, `driver` | Display-class devices through Setup API: hardware IDs and location for `gpu`; `DEVPKEY_Device_DriverProvider`, `DEVPKEY_Device_DriverVersion` and `DEVPKEY_Device_DriverDate` for `driver`; `memory` from DXGI's `DedicatedVideoMemory` |
+| `gpu`, `driver` | Display-class devices through Setup API. For `gpu`: the hardware ID, whose `SUBSYS_` field is the subsystem ID as written above; the segment and bus from `DEVPKEY_Device_BusNumber` (the segment taken to be the bits above the lowest 8, which is untested); and the device and function from the high and low 16 bits of `DEVPKEY_Device_Address`. `DEVPKEY_Device_DriverProvider`, `DEVPKEY_Device_DriverVersion` and `DEVPKEY_Device_DriverDate` for `driver`; `memory` from DXGI's `DedicatedVideoMemory` |
 | Boot `time`, `boot` | The kernel's start time (`NtQuerySystemInformation` with `SystemTimeOfDayInformation`), which is also the boot's ID |
 | `cpu.busy` | `GetSystemTimes`, as a difference between readings |
 | `memory` stream | `GlobalMemoryStatusEx` |
