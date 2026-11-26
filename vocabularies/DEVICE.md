@@ -96,7 +96,7 @@ component moved between devices (see `EVENTS.md`, "Items moving between entities
 | `disk` | `<model>\n<serial>`, trimmed | The WWN; then `path:<bus path>`, e.g. `path:pci-0000:00:04.0` |
 | `network` | The permanent MAC address, lowercase, colon-separated | Not recorded (see below) |
 | `battery` | `<manufacturer>\n<model>\n<serial>`, trimmed | The role, e.g. `battery/bat0` |
-| `gpu` | `<vendor ID>:<device ID>:<subsystem ID>\n<bus location>` (see [Graphics adapters](#graphics-adapters)) | The model name, for an adapter that is part of the processor and has no bus location |
+| `gpu` | `<vendor ID>:<device ID>:<subsystem ID>\n<bus location>` (see [Graphics adapters](#graphics-adapters)) | For an adapter with no bus location, the firmware's ID for it, e.g. `acpi:QCOM0C36`; then the model name |
 
 A component without its own identity is told apart only by where it is. Moving it, or replacing it with an identical one, can't be
 detected, or looks like a replacement.
@@ -165,7 +165,8 @@ Adapters that render graphics, integrated or discrete: a laptop may have two, an
 part of its processor. `vendor` is the maker, e.g. as named by the adapter's PCI vendor ID, and `model` is the name the driver or
 firmware reports, e.g. `NVIDIA GeForce RTX 4070`. `memory` is the dedicated video memory in bytes; for an integrated adapter that is what
 the firmware sets aside, and it is left out where the adapter just shares system memory. `hardware` is the adapter's ID in its bus's
-scheme, as for network adapters, e.g. `{ system: pci, value: "10de:2786" }`, and is left out for an adapter that has no bus.
+scheme, as for network adapters, e.g. `{ system: pci, value: "10de:2786" }`. For an adapter that has no bus it is the ID its firmware
+gives it (see below), and it is left out where there is none.
 
 Most adapters have no serial number that can be read without the maker's tools, so one replaced by an identical card in the same slot
 isn't detected, as for CPUs. Software renderers, such as Microsoft's basic render driver or Mesa's `llvmpipe`, aren't adapters and aren't
@@ -183,7 +184,16 @@ text, so every agent writes it the same way: in lowercase hexadecimal, each numb
 For example, an adapter `10de:2786` with subsystem ID `889d` and subsystem vendor ID `1043`, at bus 1, device 0, function 0 of segment 0,
 has the identity `10de:2786:889d1043\n0000:01:00.0`, and so the ID `gpu/166f5f15`.
 
-An adapter with no bus location is identified by its `model`, exactly as recorded.
+An adapter with no bus location is identified by the ID its firmware gives it, which stays the same whichever driver is installed. Its
+identity is `<system>:<value>`, as recorded in `hardware`:
+
+| Firmware | `system` | `value` | Example identity and ID |
+| --- | --- | --- | --- |
+| ACPI | `acpi` | The hardware ID (`_HID`), in uppercase | `acpi:QCOM0C36`, `gpu/45669a4d` |
+| Device tree | `devicetree` | The first string of the node's `compatible` property | `devicetree:brcm,bcm2712-v3d`, `gpu/54abb0c7` |
+
+Where the firmware gives no ID, the adapter is identified by its `model`, exactly as recorded. A driver that reports another name then
+makes it look replaced.
 
 #### Graphics drivers
 
@@ -194,7 +204,8 @@ operating system, as on macOS, there is no `driver` item, and a change there is 
 * `provider` is the driver's publisher, `version` is the version the platform reports (e.g. `"32.0.15.6094"` on Windows, or `"560.35.03"`
   for NVIDIA's driver on Linux), and `date` is the driver's date, left out if the platform gives none.
 * An adapter running the platform's generic driver (e.g. Windows' basic display driver) is still the same adapter: its driver item says so,
-  and installing the maker's driver is `upgraded`.
+  and installing the maker's driver is `upgraded`. Where the adapter's `model` or `vendor` is what the driver reports, a change to it at
+  the same time is `reconfigured`.
 * An adapter and its driver are added, removed and replaced together: `installed`, `removed` and `replaced` change both items, `resized`
   changes the adapter's `memory`, and `upgraded` changes the driver, including a roll-back to an older version.
 * Where a driver has several parts with their own versions, such as a Linux kernel module and Mesa, which one `version` names is an
@@ -471,7 +482,7 @@ runs unprivileged, as `tig-agent` does, reads once with privileges when it is in
 | `network` | Interfaces in `/sys/class/net` that have a `device`; permanent MAC from `ETHTOOL_GPERMADDR`, or `address` where `addr_assign_type` is `0`; `wireless` or `phy80211` for Wi-Fi; `device/vendor` and `device/device`; `device/driver` |
 | `os` | `ID`, `VERSION_ID` and `PRETTY_NAME` in `/etc/os-release`; `uname()` release |
 | `battery` | `/sys/class/power_supply/<name>` where `type` is `Battery`: `manufacturer`, `model_name`, `serial_number`, `technology`, `energy_full_design` (µWh) or `charge_full_design` (µAh) |
-| `gpu`, `driver` | `/sys/class/drm/card*/device`: `vendor`, `device`, `subsystem_vendor`, `subsystem_device` and the `driver` link; the bus location is the name of the directory that `device` links to; the driver's version from `/sys/module/<driver>/version` where it has one (NVIDIA's is in `/proc/driver/nvidia/version`) |
+| `gpu`, `driver` | `/sys/class/drm/card*/device`: `vendor`, `device`, `subsystem_vendor`, `subsystem_device` and the `driver` link; the bus location is the name of the directory that `device` links to; the driver's version from `/sys/module/<driver>/version` where it has one (NVIDIA's is in `/proc/driver/nvidia/version`). With no bus location: `firmware_node/hid` (ACPI) or `of_node/compatible` (device tree) |
 | Boot `time`, `boot` | `btime` in `/proc/stat`; `/proc/sys/kernel/random/boot_id` |
 | `cpu.busy` | `/proc/stat`, as a difference between readings |
 | `battery.<id>` | `/sys/class/power_supply/<name>`: `energy_now` and `energy_full` (µWh) or `charge_now` and `charge_full` (µAh), and `status` |
@@ -496,7 +507,7 @@ standard service account is an open question.
 | `network` | `GetAdaptersAddresses` (hardware interfaces of type Ethernet or Wi-Fi); the permanent address from the adapter (`OID_802_3_PERMANENT_ADDRESS`, `OID_802_11_PERMANENT_ADDRESS`) |
 | `os` | `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion`: `DisplayVersion` for `version`; `ProductName` for `name`, corrected from the build number because it still says Windows 10 on Windows 11; and `10.0.<CurrentBuild>.<UBR>` for `kernel` |
 | `battery` | `IOCTL_BATTERY_QUERY_INFORMATION` (manufacturer, name, serial, designed capacity) |
-| `gpu`, `driver` | Display-class devices through Setup API. For `gpu`: the hardware ID, whose `SUBSYS_` field is the subsystem ID as written above; the segment and bus from `DEVPKEY_Device_BusNumber` (the segment taken to be the bits above the lowest 8, which is untested); and the device and function from the high and low 16 bits of `DEVPKEY_Device_Address`. `DEVPKEY_Device_DriverProvider`, `DEVPKEY_Device_DriverVersion` and `DEVPKEY_Device_DriverDate` for `driver`; `memory` from DXGI's `DedicatedVideoMemory` |
+| `gpu`, `driver` | Display-class devices through Setup API. For `gpu`: the hardware ID, whose `SUBSYS_` field is the subsystem ID as written above; the segment and bus from `DEVPKEY_Device_BusNumber` (the segment taken to be the bits above the lowest 8, which is untested); and the device and function from the high and low 16 bits of `DEVPKEY_Device_Address`. For an adapter listed by ACPI, `_HID` from the first hardware ID: `<vendor>` and `<device>` joined, where it is `ACPI\VEN_<vendor>&DEV_<device>`, or else what follows `ACPI\` (untested). `DEVPKEY_Device_DriverProvider`, `DEVPKEY_Device_DriverVersion` and `DEVPKEY_Device_DriverDate` for `driver`; `memory` from DXGI's `DedicatedVideoMemory` |
 | Boot `time`, `boot` | The kernel's start time (`NtQuerySystemInformation` with `SystemTimeOfDayInformation`), which is also the boot's ID |
 | `cpu.busy` | `GetSystemTimes`, as a difference between readings |
 | `memory` stream | `GlobalMemoryStatusEx` |
